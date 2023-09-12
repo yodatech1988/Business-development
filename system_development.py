@@ -1,51 +1,33 @@
 ```python
 from google.cloud import storage
 from google.cloud import secretmanager
-from google.cloud import automl
-from google.cloud import securitycenter
-from google.cloud import compliance
-from schemas import SystemDevelopmentSchema
+import os
 
-google_cloud_infrastructure = {}
-
-def designSystemInfrastructure():
+def design_system(business_plan, owner_operator, email_address):
     # Create a storage client.
     storage_client = storage.Client()
 
     # Create a bucket in Google Cloud Storage (GCS)
-    bucket = storage_client.create_bucket('business_plan_bucket')
-    google_cloud_infrastructure['storage_bucket'] = bucket.name
+    bucket_name = f"{owner_operator}-business-plan"
+    bucket = storage_client.create_bucket(bucket_name)
 
-    # Create a Secret Manager client.
+    # Upload the business plan to the bucket
+    blob = bucket.blob('business_plan.json')
+    blob.upload_from_string(str(business_plan))
+
+    # Create a secret manager client
     secret_client = secretmanager.SecretManagerServiceClient()
 
-    # Create a secret in Secret Manager
-    secret = secret_client.create_secret('business_plan_secret')
-    google_cloud_infrastructure['secret_manager'] = secret.name
+    # Create a secret for the email address
+    secret_name = f"{owner_operator}-email"
+    secret = secret_client.create_secret(
+        request={"parent": f"projects/{os.getenv('PROJECT_ID')}", "secret_id": secret_name, "secret": {"replication": {"automatic": {}}}}
+    )
 
-    # Create an AutoML client.
-    automl_client = automl.AutoMlClient()
+    # Add the email address as a secret version
+    secret_version = secret_client.add_secret_version(
+        request={"parent": secret.name, "payload": {"data": email_address.encode('UTF-8')}}
+    )
 
-    # Create a model in AutoML
-    model = automl_client.create_model('business_plan_model')
-    google_cloud_infrastructure['automl_model'] = model.name
-
-    # Create a Security Command Center client.
-    security_client = securitycenter.SecurityCenterClient()
-
-    # Create a security policy in Security Command Center
-    policy = security_client.create_policy('business_plan_policy')
-    google_cloud_infrastructure['security_policy'] = policy.name
-
-    # Create a Compliance client.
-    compliance_client = compliance.ComplianceClient()
-
-    # Create a compliance policy in Compliance
-    compliance_policy = compliance_client.create_policy('business_plan_compliance')
-    google_cloud_infrastructure['compliance_policy'] = compliance_policy.name
-
-    # Validate the infrastructure schema
-    SystemDevelopmentSchema().load(google_cloud_infrastructure)
-
-    return google_cloud_infrastructure
+    return bucket_name, secret_name
 ```

@@ -2,39 +2,31 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from CredentialDeliverySchema import login_credentials
 
-def deliverCredentials():
-    # Define the SMTP server credentials here
-    smtp_server = "smtp.gmail.com"
-    smtp_port = 587
-    smtp_username = "your-email@gmail.com"
-    smtp_password = "your-password"
-
-    # Define the email properties
-    from_address = smtp_username
-    to_address = login_credentials['email']
-    subject = "Your Login Credentials"
-
-    # Create the email
+def deliver_credentials(email_address, credentials):
+    # setup the parameters of the message
+    password = "YOUR_PASSWORD"
     msg = MIMEMultipart()
-    msg['From'] = from_address
-    msg['To'] = to_address
-    msg['Subject'] = subject
+    msg['From'] = "YOUR_EMAIL"
+    msg['To'] = email_address
+    msg['Subject'] = "Credentials Delivery"
 
-    # Define the email body
-    body = f"Dear User,\n\nHere are your login credentials:\nUsername: {login_credentials['username']}\nPassword: {login_credentials['password']}\n\nBest,\nAGI"
+    # add in the message body
+    message = f"Dear Owner-Operator,\n\nHere are your login credentials:\n\n{credentials}\n\nBest,\nAGI"
+    msg.attach(MIMEText(message, 'plain'))
 
-    # Attach the body to the email
-    msg.attach(MIMEText(body, 'plain'))
+    #create server
+    server = smtplib.SMTP('smtp.gmail.com: 587')
 
-    # Connect to the SMTP server and send the email
-    server = smtplib.SMTP(smtp_server, smtp_port)
     server.starttls()
-    server.login(smtp_username, smtp_password)
-    server.send_message(msg)
+
+    # Login Credentials for sending the mail
+    server.login(msg['From'], password)
+
+    # send the message via the server
+    server.sendmail(msg['From'], msg['To'], msg.as_string())
+
     server.quit()
 
-# Call the function to deliver the credentials
-deliverCredentials()
+    print("Successfully sent email to %s:" % (msg['To']))
 ```

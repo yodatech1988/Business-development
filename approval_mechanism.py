@@ -1,48 +1,46 @@
 ```python
-from project_management_integration import project_management_tool
-from google.cloud import pubsub_v1
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
+# Shared variables
+business_plan = {}
+owner_operator = ""
+email_address = ""
 approval_status = False
 
-class ApprovalSchema:
-    def __init__(self, stage, update, feedback):
-        self.stage = stage
-        self.update = update
-        self.feedback = feedback
-
-def createApprovalMechanism():
+# Function to send approval request
+def send_approval_request():
     global approval_status
-    publisher = pubsub_v1.PublisherClient()
-    topic_path = publisher.topic_path('business-plan-project', 'ApprovalMechanismUpdate')
+    approval_status = False
 
+    # Create message
+    msg = MIMEMultipart()
+    msg['From'] = 'noreply@businessplan.com'
+    msg['To'] = email_address
+    msg['Subject'] = 'Approval Request for Business Plan Stage'
+
+    # Message body
+    body = 'Dear {},\n\nWe have reached a crucial stage in the business plan. Please review the current status and provide your approval to proceed further.\n\nBest,\nAGI'.format(owner_operator)
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Send email
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login('noreply@businessplan.com', 'password')  # Use actual email credentials
+    text = msg.as_string()
+    server.sendmail('noreply@businessplan.com', email_address, text)
+    server.quit()
+
+# Function to create approval mechanism
+def create_approval_mechanism():
+    # Call function to send approval request
+    send_approval_request()
+
+    # Wait for approval
     while not approval_status:
-        for task in project_management_tool.tasks:
-            if task.status == 'Pending Approval':
-                update = f"Task {task.name} is pending your approval."
-                approval_request = ApprovalSchema(task.name, update, None)
-                publisher.publish(topic_path, approval_request)
-                print(f"Approval request for {task.name} has been sent.")
-                break
-        else:
-            continue
-        break
+        pass  # Wait for approval_status to be True
 
-    subscriber = pubsub_v1.SubscriberClient()
-    subscription_path = subscriber.subscription_path('business-plan-project', 'ApprovalMechanismUpdate')
-
-    def callback(message):
-        global approval_status
-        feedback = message.data
-        if feedback == 'Approved':
-            approval_status = True
-            print("Approval received. Proceeding to the next stage.")
-        else:
-            print("Approval not received. Waiting for feedback.")
-        message.ack()
-
-    subscriber.subscribe(subscription_path, callback=callback)
-    print("Listening for approval...")
-
-if __name__ == "__main__":
-    createApprovalMechanism()
+    # Proceed to next stage
+    print('Approval received. Proceeding to next stage.')
 ```
