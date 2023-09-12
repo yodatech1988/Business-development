@@ -4,32 +4,45 @@ from google.cloud import pubsub_v1
 
 approval_status = False
 
-def requireApproval():
+class ApprovalSchema:
+    def __init__(self, stage, update, feedback):
+        self.stage = stage
+        self.update = update
+        self.feedback = feedback
+
+def createApprovalMechanism():
     global approval_status
     publisher = pubsub_v1.PublisherClient()
-    topic_path = publisher.topic_path('business-plan-project', 'ApprovalRequired')
+    topic_path = publisher.topic_path('business-plan-project', 'ApprovalMechanismUpdate')
 
-    def callback(message_future):
-        if message_future.exception(timeout=30):
-            print('Publishing message on {} threw an Exception {}.'.format(
-                topic_path, message_future.exception()))
-        else:
-            print('Message {} published.'.format(message_future.result()))
-
-    data = 'Approval required for the next stage of the business plan.'
-    data = data.encode('utf-8')
-    message_future = publisher.publish(topic_path, data=data)
-    message_future.add_done_callback(callback)
-
-    # Block until the message is published.
-    message_future.result()
-
-    # Wait for the owner's approval
     while not approval_status:
-        pass
+        for task in project_management_tool.tasks:
+            if task.status == 'Pending Approval':
+                update = f"Task {task.name} is pending your approval."
+                approval_request = ApprovalSchema(task.name, update, None)
+                publisher.publish(topic_path, approval_request)
+                print(f"Approval request for {task.name} has been sent.")
+                break
+        else:
+            continue
+        break
 
-def updateApprovalStatus(status):
-    global approval_status
-    approval_status = status
-    print('Approval status updated to: ', approval_status)
+    subscriber = pubsub_v1.SubscriberClient()
+    subscription_path = subscriber.subscription_path('business-plan-project', 'ApprovalMechanismUpdate')
+
+    def callback(message):
+        global approval_status
+        feedback = message.data
+        if feedback == 'Approved':
+            approval_status = True
+            print("Approval received. Proceeding to the next stage.")
+        else:
+            print("Approval not received. Waiting for feedback.")
+        message.ack()
+
+    subscriber.subscribe(subscription_path, callback=callback)
+    print("Listening for approval...")
+
+if __name__ == "__main__":
+    createApprovalMechanism()
 ```

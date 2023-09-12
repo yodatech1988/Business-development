@@ -1,37 +1,29 @@
 ```python
-import json
-from google.cloud import pubsub_v1
+import market_analysis
+from business_plan_drafting import BusinessPlanDrafting
 
-# Define the business plan schema
-BusinessPlanSchema = {
-    "type": "object",
-    "properties": {
-        "market_trends": {"type": "string"},
-        "revenue_strategies": {"type": "string"},
-        "potential_challenges": {"type": "string"},
-    },
-    "required": ["market_trends", "revenue_strategies", "potential_challenges"]
-}
+class InitialResearchAndPlanDrafting:
+    def __init__(self):
+        self.business_plan = None
+        self.market_trends = None
+        self.revenue_strategies = None
+        self.potential_challenges = None
 
-# Initialize the business plan variable
-business_plan = {}
+    def conductInitialResearch(self):
+        self.market_trends = market_analysis.get_current_market_trends()
+        self.revenue_strategies = market_analysis.identify_revenue_strategies()
+        self.potential_challenges = market_analysis.foresee_potential_challenges()
 
-# Define the function to draft the business plan
-def draftBusinessPlan():
-    # Conduct research and draft the business plan
-    business_plan['market_trends'] = "Research market trends here"
-    business_plan['revenue_strategies'] = "Identify revenue generation strategies here"
-    business_plan['potential_challenges'] = "Foresee potential challenges here"
+    def draftBusinessPlan(self):
+        business_plan_drafting = BusinessPlanDrafting(self.market_trends, self.revenue_strategies, self.potential_challenges)
+        self.business_plan = business_plan_drafting.create_draft()
 
-    # Validate the business plan against the schema
-    jsonschema.validate(instance=business_plan, schema=BusinessPlanSchema)
+    def execute(self):
+        self.conductInitialResearch()
+        self.draftBusinessPlan()
+        return self.business_plan
 
-    # Publish the 'BusinessPlanDrafted' message
-    publisher = pubsub_v1.PublisherClient()
-    topic_path = publisher.topic_path('project-id', 'BusinessPlanDrafted')
-    data = json.dumps(business_plan).encode('utf-8')
-    publisher.publish(topic_path, data=data)
-
-# Call the function to draft the business plan
-draftBusinessPlan()
+if __name__ == "__main__":
+    initial_research_and_plan_drafting = InitialResearchAndPlanDrafting()
+    business_plan = initial_research_and_plan_drafting.execute()
 ```
