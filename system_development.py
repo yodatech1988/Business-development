@@ -3,31 +3,42 @@ from google.cloud import storage
 from google.cloud import secretmanager
 import os
 
-def design_system(business_plan, owner_operator, email_address):
-    # Create a storage client.
-    storage_client = storage.Client()
+# Define the system configuration schema
+class SystemConfigSchema:
+    def __init__(self, project_id, bucket_name, secret_id, version_id):
+        self.project_id = project_id
+        self.bucket_name = bucket_name
+        self.secret_id = secret_id
+        self.version_id = version_id
 
-    # Create a bucket in Google Cloud Storage (GCS)
-    bucket_name = f"{owner_operator}-business-plan"
-    bucket = storage_client.create_bucket(bucket_name)
+# Define the system configuration
+system_config = SystemConfigSchema(os.getenv('PROJECT_ID'), os.getenv('BUCKET_NAME'), os.getenv('SECRET_ID'), os.getenv('VERSION_ID'))
 
-    # Upload the business plan to the bucket
-    blob = bucket.blob('business_plan.json')
-    blob.upload_from_string(str(business_plan))
+def deploySystem():
+    # Create a storage client
+    storage_client = storage.Client(system_config.project_id)
 
-    # Create a secret manager client
+    # Get the bucket with the name
+    bucket = storage_client.get_bucket(system_config.bucket_name)
+
+    # Create a blob with the name
+    blob = bucket.blob('business_plan')
+
+    # Upload the business plan to the blob
+    blob.upload_from_filename('business_plan.txt')
+
+    # Create the Secret Manager client
     secret_client = secretmanager.SecretManagerServiceClient()
 
-    # Create a secret for the email address
-    secret_name = f"{owner_operator}-email"
-    secret = secret_client.create_secret(
-        request={"parent": f"projects/{os.getenv('PROJECT_ID')}", "secret_id": secret_name, "secret": {"replication": {"automatic": {}}}}
-    )
+    # Build the resource name of the secret version
+    secret_name = f"projects/{system_config.project_id}/secrets/{system_config.secret_id}/versions/{system_config.version_id}"
 
-    # Add the email address as a secret version
-    secret_version = secret_client.add_secret_version(
-        request={"parent": secret.name, "payload": {"data": email_address.encode('UTF-8')}}
-    )
+    # Access the secret version
+    response = secret_client.access_secret_version(secret_name)
 
-    return bucket_name, secret_name
+    # Return the decoded payload
+    return response.payload.data.decode('UTF-8')
+
+# Call the function to deploy the system
+deploySystem()
 ```

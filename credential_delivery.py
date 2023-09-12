@@ -3,7 +3,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-def deliver_credentials(email_address, credentials):
+def deliverCredentials(credentials, email_address):
     # setup the parameters of the message
     password = "YOUR_PASSWORD"
     msg = MIMEMultipart()
@@ -12,10 +12,10 @@ def deliver_credentials(email_address, credentials):
     msg['Subject'] = "Credentials Delivery"
 
     # add in the message body
-    message = f"Dear Owner-Operator,\n\nHere are your login credentials:\n\n{credentials}\n\nBest,\nAGI"
+    message = f"Dear User,\n\nHere are your credentials:\n\n{credentials}"
     msg.attach(MIMEText(message, 'plain'))
 
-    #create server
+    # create server
     server = smtplib.SMTP('smtp.gmail.com: 587')
 
     server.starttls()
@@ -28,5 +28,5 @@ def deliver_credentials(email_address, credentials):
 
     server.quit()
 
-    print("Successfully sent email to %s:" % (msg['To']))
+    print("Credentials successfully sent to %s:" % (msg['To']))
 ```
