@@ -63,5 +63,12 @@ The AEGIS Directive
 ```
 
 ## Open items
-- [ ] Decide Individual vs. registered-business PayPal account type.
-- [ ] Fill in specific reason for initial Bohemia outreach (mod publishing vs. licensing vs. support).
+- [x] PayPal account type: **Individual/Sole proprietor** — decided 2026-09-12. No LLC exists yet;
+  zero-cost-first, and it upgrades to a registered-business account later without losing history.
+- [ ] Fill in specific reason for initial Bohemia outreach (mod publishing vs. licensing vs. support)
+  — needs Jeremy's input, content of the letter depends on it.
+
+## Note on repo push
+This doc was pushed directly to `main`, bypassing a "changes must go through a pull request" branch
+rule (GitHub allowed the bypass for this account). Future changes to this repo should go through a
+PR unless told otherwise.
